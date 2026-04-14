@@ -1,4 +1,4 @@
-import { User, Team, ApiKey, Model, SpendLog } from './types';
+import { User, Team, ApiKey, Model, ModelSpend } from './types';
 
 const API_BASE = 'https://litellm-proxy-258509337164.asia-northeast1.run.app';
 
@@ -41,38 +41,13 @@ export class ApiClient {
     return data.data || [];
   }
 
-  async getGlobalSpendReport(): Promise<{
-    total_spend: number;
-    total_requests: number;
-    total_users: number;
-    total_keys: number;
-  }> {
-    try {
-      const data = await this.fetch<any>('/global/spend/report');
-      return {
-        total_spend: data.total_spend || 0,
-        total_requests: data.total_requests || 0,
-        total_users: data.total_users || 0,
-        total_keys: data.total_keys || 0,
-      };
-    } catch {
-      return { total_spend: 0, total_requests: 0, total_users: 0, total_keys: 0 };
-    }
-  }
-
-  async getSpendLogs(): Promise<SpendLog[]> {
-    try {
-      const data = await this.fetch<SpendLog[]>('/global/spend/logs');
-      return Array.isArray(data) ? data : [];
-    } catch {
-      return [];
-    }
-  }
-
   async getUsers(): Promise<User[]> {
     try {
       const data = await this.fetch<any>('/user/list');
-      return Array.isArray(data) ? data : [];
+      // Response is { users: [...] }
+      if (data && data.users && Array.isArray(data.users)) return data.users;
+      if (Array.isArray(data)) return data;
+      return [];
     } catch {
       return [];
     }
@@ -89,10 +64,37 @@ export class ApiClient {
 
   async getKeys(): Promise<ApiKey[]> {
     try {
-      const data = await this.fetch<any>('/key/info');
+      const data = await this.fetch<any>('/key/list?include_team_keys=true&return_full_object=true&page_size=100');
+      if (data && data.keys && Array.isArray(data.keys)) return data.keys;
       if (Array.isArray(data)) return data;
-      if (data.keys && Array.isArray(data.keys)) return data.keys;
       return [];
+    } catch {
+      return [];
+    }
+  }
+
+  async getDailySpend(): Promise<{ date: string; spend: number }[]> {
+    try {
+      const data = await this.fetch<any[]>('/global/spend/logs');
+      return Array.isArray(data) ? data : [];
+    } catch {
+      return [];
+    }
+  }
+
+  async getModelSpend(): Promise<ModelSpend[]> {
+    try {
+      const data = await this.fetch<ModelSpend[]>('/global/spend/models?limit=20');
+      return Array.isArray(data) ? data : [];
+    } catch {
+      return [];
+    }
+  }
+
+  async getKeySpend(): Promise<{ api_key: string; key_name: string; key_alias: string; total_spend: number }[]> {
+    try {
+      const data = await this.fetch<any[]>('/global/spend/keys?limit=20');
+      return Array.isArray(data) ? data : [];
     } catch {
       return [];
     }

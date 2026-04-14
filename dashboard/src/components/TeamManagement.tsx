@@ -79,7 +79,7 @@ export default function TeamManagement({ apiClient, onRefresh }: TeamManagementP
       await apiClient.createTeam(
         newTeam.teamAlias,
         newTeam.maxBudget ? parseFloat(newTeam.maxBudget) : undefined,
-        newTeam.models.length > 0 ? newTeam.models : undefined
+        newTeam.models.includes('__ALL__') ? undefined : (newTeam.models.length > 0 ? newTeam.models : undefined)
       );
 
       setDialogOpen(false);
@@ -186,16 +186,30 @@ export default function TeamManagement({ apiClient, onRefresh }: TeamManagementP
             <Select
               multiple
               value={newTeam.models}
-              onChange={(e) => setNewTeam({ ...newTeam, models: e.target.value as string[] })}
+              onChange={(e) => {
+                const val = e.target.value as string[];
+                if (val.includes('__ALL__')) {
+                  setNewTeam({ ...newTeam, models: ['__ALL__'] });
+                } else {
+                  setNewTeam({ ...newTeam, models: val });
+                }
+              }}
               input={<OutlinedInput label="許可モデル" />}
               renderValue={(selected) => (
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                  {selected.map((value) => (
-                    <Chip key={value} label={value} size="small" />
-                  ))}
+                  {selected.includes('__ALL__') ? (
+                    <Chip label="すべてのモデル" size="small" color="primary" />
+                  ) : (
+                    selected.map((value) => (
+                      <Chip key={value} label={value} size="small" />
+                    ))
+                  )}
                 </Box>
               )}
             >
+              <MenuItem value="__ALL__">
+                <strong>すべてのモデル</strong>
+              </MenuItem>
               {models.map((model) => (
                 <MenuItem key={model.id} value={model.id}>
                   {model.id}

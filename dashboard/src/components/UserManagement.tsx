@@ -79,10 +79,11 @@ export default function UserManagement({ apiClient, onRefresh }: UserManagementP
 
     setCreating(true);
     try {
+      const modelsToSend = newUser.models.includes('__ALL__') ? undefined : (newUser.models.length > 0 ? newUser.models : undefined);
       const result = await apiClient.createUser(
         newUser.userId,
         newUser.maxBudget ? parseFloat(newUser.maxBudget) : undefined,
-        newUser.models.length > 0 ? newUser.models : undefined
+        modelsToSend
       );
 
       setGeneratedKey(result.key);
@@ -194,16 +195,30 @@ export default function UserManagement({ apiClient, onRefresh }: UserManagementP
             <Select
               multiple
               value={newUser.models}
-              onChange={(e) => setNewUser({ ...newUser, models: e.target.value as string[] })}
+              onChange={(e) => {
+                const val = e.target.value as string[];
+                if (val.includes('__ALL__')) {
+                  setNewUser({ ...newUser, models: ['__ALL__'] });
+                } else {
+                  setNewUser({ ...newUser, models: val });
+                }
+              }}
               input={<OutlinedInput label="許可モデル" />}
               renderValue={(selected) => (
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                  {selected.map((value) => (
-                    <Chip key={value} label={value} size="small" />
-                  ))}
+                  {selected.includes('__ALL__') ? (
+                    <Chip label="すべてのモデル" size="small" color="primary" />
+                  ) : (
+                    selected.map((value) => (
+                      <Chip key={value} label={value} size="small" />
+                    ))
+                  )}
                 </Box>
               )}
             >
+              <MenuItem value="__ALL__">
+                <strong>すべてのモデル</strong>
+              </MenuItem>
               {models.map((model) => (
                 <MenuItem key={model.id} value={model.id}>
                   {model.id}
