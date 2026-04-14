@@ -42,9 +42,6 @@ model_list:
 
 litellm_settings:
   drop_params: true
-  success_callback: ["gcs_pubsub"]
-  gcs_pubsub_topic_id: "litellm-spend-logs"
-  gcs_pubsub_project_id: "data-agent-bq"
 
 # Gemini CLI で Claude を使う場合のエイリアス設定（応用例）
 # gemini-cli が送る "gemini-2.5-pro" を Claude にルーティング
