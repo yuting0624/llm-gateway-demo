@@ -86,6 +86,13 @@ curl -X POST "${PROXY_URL}/key/generate" \
 ```
 
 ### 4. Claude Code の接続
+
+Claude Code 公式ドキュメント: https://code.claude.com/docs/en/llm-gateway
+
+#### 方法A: Unified Endpoint（推奨）
+
+LiteLLM の Anthropic 形式エンドポイントを使用。ロードバランシング・フォールバック対応。
+
 `~/.claude/settings.json`:
 ```json
 {
@@ -93,6 +100,24 @@ curl -X POST "${PROXY_URL}/key/generate" \
     "ANTHROPIC_BASE_URL": "https://<your-proxy>.run.app",
     "ANTHROPIC_AUTH_TOKEN": "<your-api-key>",
     "ANTHROPIC_MODEL": "claude-opus-4-6"
+  }
+}
+```
+
+#### 方法B: Vertex AI Pass-through Endpoint
+
+LiteLLM の Vertex AI パススルーを使用。Vertex AI ネイティブの API 形式を維持。
+
+`~/.claude/settings.json`:
+```json
+{
+  "env": {
+    "ANTHROPIC_VERTEX_BASE_URL": "https://<your-proxy>.run.app/vertex_ai/v1",
+    "ANTHROPIC_VERTEX_PROJECT_ID": "<your-gcp-project-id>",
+    "CLOUD_ML_REGION": "us-east5",
+    "CLAUDE_CODE_USE_VERTEX": "1",
+    "CLAUDE_CODE_SKIP_VERTEX_AUTH": "1",
+    "ANTHROPIC_AUTH_TOKEN": "<your-api-key>"
   }
 }
 ```
