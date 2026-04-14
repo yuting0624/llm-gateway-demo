@@ -110,8 +110,10 @@ gemini "Hello!"
 |---------|-----------|------|
 | `claude-opus-4-6` | Anthropic (via Vertex AI) | 高度な推論・コーディング |
 | `claude-sonnet-4-6` | Anthropic (via Vertex AI) | バランス型タスク |
-| `gemini-3.1-pro` | Google (via Vertex AI) | 高性能推論 |
-| `gemini-3.1-flash` | Google (via Vertex AI) | 高速・低コスト |
+| `gemini-3.1-pro` | Google (via Vertex AI) | 最新フラッグシップ推論 |
+| `gemini-3.1-flash-lite` | Google (via Vertex AI) | 高速・低コスト |
+| `gemini-2.5-pro` | Google (via Vertex AI) | 安定版高性能推論 |
+| `gemini-2.0-flash` | Google (via Vertex AI) | 安定版高速推論 |
 
 ## ファイル構成
 

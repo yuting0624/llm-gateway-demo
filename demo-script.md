@@ -5,8 +5,8 @@
 - `PROXY_URL` と `MASTER_KEY` を控えておく
 
 ```bash
-export PROXY_URL="https://litellm-proxy-xxxxx.run.app"
-export MASTER_KEY="sk-your-master-key"
+export PROXY_URL="https://litellm-proxy-258509337164.asia-northeast1.run.app"
+export MASTER_KEY="84c24081344dd9ff627ead51880d243b"
 ```
 
 ---
@@ -20,7 +20,7 @@ curl -X POST "${PROXY_URL}/team/new" \
   -H "Content-Type: application/json" \
   -d '{
     "team_alias": "engineering",
-    "models": ["claude-opus-4-6", "claude-sonnet-4-6", "gemini-3.1-pro", "gemini-3.1-flash"],
+    "models": ["claude-opus-4-6", "claude-sonnet-4-6", "gemini-3.1-pro", "gemini-3.1-flash-lite", "gemini-2.5-pro", "gemini-2.0-flash"],
     "max_budget": 100.0
   }'
 ```
@@ -34,19 +34,19 @@ curl -X POST "${PROXY_URL}/key/generate" \
   -d '{
     "user_id": "tanaka@example.com",
     "team_id": "<TEAM_ID>",
-    "models": ["claude-opus-4-6", "claude-sonnet-4-6", "gemini-3.1-pro", "gemini-3.1-flash"],
+    "models": ["claude-opus-4-6", "claude-sonnet-4-6", "gemini-3.1-pro", "gemini-3.1-flash-lite", "gemini-2.5-pro", "gemini-2.0-flash"],
     "max_budget": 50.0,
     "budget_duration": "monthly"
   }'
 
-# インターン向け（Flash のみ）
+# インターン向け（軽量モデルのみ）
 curl -X POST "${PROXY_URL}/key/generate" \
   -H "Authorization: Bearer ${MASTER_KEY}" \
   -H "Content-Type: application/json" \
   -d '{
     "user_id": "intern@example.com",
     "team_id": "<TEAM_ID>",
-    "models": ["gemini-3.1-flash", "claude-sonnet-4-6"],
+    "models": ["gemini-3.1-flash-lite", "gemini-2.0-flash", "claude-sonnet-4-6"],
     "max_budget": 10.0,
     "budget_duration": "monthly"
   }'
@@ -70,7 +70,7 @@ curl -X POST "${PROXY_URL}/v1/chat/completions" \
   }'
 ```
 
-### Gemini でリクエスト
+### Gemini 3.1 Pro でリクエスト
 ```bash
 curl -X POST "${PROXY_URL}/v1/chat/completions" \
   -H "Authorization: Bearer ${USER_KEY}" \
@@ -92,7 +92,8 @@ curl -X POST "${PROXY_URL}/v1/chat/completions" \
   -H "Content-Type: application/json" \
   -d '{
     "model": "claude-opus-4-6",
-    "messages": [{"role": "user", "content": "Hello"}]
+    "messages": [{"role": "user", "content": "Hello"}],
+    "max_tokens": 50
   }'
 ```
 
@@ -104,8 +105,8 @@ curl -X POST "${PROXY_URL}/v1/chat/completions" \
 ```json
 {
   "env": {
-    "ANTHROPIC_BASE_URL": "https://litellm-proxy-xxxxx.run.app",
-    "ANTHROPIC_AUTH_TOKEN": "sk-user-key-here",
+    "ANTHROPIC_BASE_URL": "https://litellm-proxy-258509337164.asia-northeast1.run.app",
+    "ANTHROPIC_AUTH_TOKEN": "<your-api-key>",
     "ANTHROPIC_MODEL": "claude-opus-4-6"
   }
 }
@@ -122,6 +123,7 @@ export GOOGLE_GEMINI_BASE_URL="${PROXY_URL}"
 export GEMINI_API_KEY="${USER_KEY}"
 
 gemini "Hello from Gemini CLI via LLM Gateway!"
+# Note: Gemini CLI経由だとgemini-3.1-proが自動的に使われる
 ```
 
 ---
@@ -166,16 +168,20 @@ SELECT
 FROM `data-agent-bq.llm_gateway.spend_logs`
 GROUP BY user, date
 ORDER BY date DESC, daily_cost DESC;
-
--- 利用パターン（時間帯別）
-SELECT
-  EXTRACT(HOUR FROM startTime) AS hour_of_day,
-  model,
-  COUNT(*) AS requests
-FROM `data-agent-bq.llm_gateway.spend_logs`
-GROUP BY hour_of_day, model
-ORDER BY hour_of_day;
 ```
+
+---
+
+## 対応モデル一覧
+
+| モデル名 | プロバイダ | 用途 |
+|---------|-----------|------|
+| `claude-opus-4-6` | Anthropic (Vertex AI) | 高度な推論・コーディング |
+| `claude-sonnet-4-6` | Anthropic (Vertex AI) | バランス型タスク |
+| `gemini-3.1-pro` | Google (Vertex AI) | 最新フラッグシップ推論 |
+| `gemini-3.1-flash-lite` | Google (Vertex AI) | 高速・低コスト |
+| `gemini-2.5-pro` | Google (Vertex AI) | 安定版高性能推論 |
+| `gemini-2.0-flash` | Google (Vertex AI) | 安定版高速推論 |
 
 ---
 

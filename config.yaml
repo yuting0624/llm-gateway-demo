@@ -1,5 +1,5 @@
 model_list:
-  # Claude Models (via Vertex AI)
+  # Claude Models (via Vertex AI - global)
   - model_name: claude-opus-4-6
     litellm_params:
       model: vertex_ai/claude-opus-4-6
@@ -12,18 +12,33 @@ model_list:
       vertex_project: "data-agent-bq"
       vertex_location: "global"
 
-  # Gemini Models (via Vertex AI)
+  # Gemini 3.1 Models (global endpoint)
   - model_name: gemini-3.1-pro
     litellm_params:
       model: vertex_ai/gemini-3.1-pro-preview
       vertex_project: "data-agent-bq"
       vertex_location: "global"
+      api_base: "https://aiplatform.googleapis.com/v1/projects/data-agent-bq/locations/global/publishers/google/models/gemini-3.1-pro-preview"
 
-  - model_name: gemini-3.1-flash
+  - model_name: gemini-3.1-flash-lite
     litellm_params:
-      model: vertex_ai/gemini-3.1-flash-preview
+      model: vertex_ai/gemini-3.1-flash-lite-preview
       vertex_project: "data-agent-bq"
       vertex_location: "global"
+      api_base: "https://aiplatform.googleapis.com/v1/projects/data-agent-bq/locations/global/publishers/google/models/gemini-3.1-flash-lite-preview"
+
+  # Gemini 2.x Models (us-central1 - fallback)
+  - model_name: gemini-2.5-pro
+    litellm_params:
+      model: vertex_ai/gemini-2.5-pro
+      vertex_project: "data-agent-bq"
+      vertex_location: "us-central1"
+
+  - model_name: gemini-2.0-flash
+    litellm_params:
+      model: vertex_ai/gemini-2.0-flash
+      vertex_project: "data-agent-bq"
+      vertex_location: "us-central1"
 
 litellm_settings:
   drop_params: true
