@@ -46,6 +46,13 @@ litellm_settings:
   gcs_pubsub_topic_id: "litellm-spend-logs"
   gcs_pubsub_project_id: "data-agent-bq"
 
+# Gemini CLI で Claude を使う場合のエイリアス設定（応用例）
+# gemini-cli が送る "gemini-2.5-pro" を Claude にルーティング
+# 有効化する場合は下記のコメントを外してください
+# router_settings:
+#   model_group_alias:
+#     "gemini-2.5-pro": "claude-sonnet-4-6"
+
 general_settings:
   master_key: "os.environ/LITELLM_MASTER_KEY"
   database_url: "os.environ/DATABASE_URL"

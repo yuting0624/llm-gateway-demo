@@ -124,11 +124,33 @@ LiteLLM の Vertex AI パススルーを使用。Vertex AI ネイティブの AP
 ```
 
 ### 5. Gemini CLI の接続
+
+Gemini CLI は環境変数で設定します。永続化には `~/.bashrc` または `~/.zshrc` に追加してください。
+
 ```bash
+# ~/.bashrc または ~/.zshrc に追加
 export GOOGLE_GEMINI_BASE_URL="https://<your-proxy>.run.app"
 export GEMINI_API_KEY="<your-api-key>"
+```
+
+```bash
 gemini "Hello!"
 ```
+
+> **応用: Gemini CLI で Claude を使う** 🚀
+>
+> `config.yaml` の `router_settings.model_group_alias` を設定すると、
+> Gemini CLI からのリクエストを Claude にルーティングできます。
+> バックエンドは同じ Vertex AI 経由なので、Anthropic API キーは不要です。
+>
+> ```yaml
+> # config.yaml
+> router_settings:
+>   model_group_alias:
+>     "gemini-2.5-pro": "claude-sonnet-4-6"  # Vertex AI 経由
+> ```
+>
+> 詳細: https://docs.litellm.ai/docs/tutorials/litellm_gemini_cli
 
 ## 対応モデル
 
