@@ -38,26 +38,26 @@ flowchart TB
 
 ## 使用 GCP プロダクト
 
-| プロダクト         | 用途                                                |
-| ------------------ | --------------------------------------------------- |
-| **Cloud Run**      | LiteLLM Proxy のホスティング                        |
-| **Vertex AI**      | Claude / Gemini モデルへのアクセス                  |
-| **Cloud SQL**      | LiteLLM 内部状態（キー、チーム、予算、利用ログ）    |
-| **BigQuery**       | Federation で Cloud SQL をリアルタイム分析          |
-| **Looker Studio**  | ダッシュボード・可視化                              |
-| **Secret Manager** | マスターキー・DB 接続情報の管理                     |
-| **IAM**            | サービスアカウントによるアクセス制御                |
+| プロダクト         | 用途                                             |
+| ------------------ | ------------------------------------------------ |
+| **Cloud Run**      | LiteLLM Proxy のホスティング                     |
+| **Vertex AI**      | Claude / Gemini モデルへのアクセス               |
+| **Cloud SQL**      | LiteLLM 内部状態（キー、チーム、予算、利用ログ） |
+| **BigQuery**       | Federation で Cloud SQL をリアルタイム分析       |
+| **Looker Studio**  | ダッシュボード・可視化                           |
+| **Secret Manager** | マスターキー・DB 接続情報の管理                  |
+| **IAM**            | サービスアカウントによるアクセス制御             |
 
 ## 対応モデル
 
-| モデル名                 | プロバイダ                | 用途                       |
-| ------------------------ | ------------------------- | -------------------------- |
-| `claude-opus-4-6`        | Anthropic (via Vertex AI) | 高度な推論・コーディング   |
-| `claude-sonnet-4-6`      | Anthropic (via Vertex AI) | バランス型タスク           |
-| `gemini-3.1-pro`         | Google (via Vertex AI)    | 最新フラッグシップ推論     |
-| `gemini-3.1-flash-lite`  | Google (via Vertex AI)    | 高速・低コスト             |
-| `gemini-2.5-pro`         | Google (via Vertex AI)    | 安定版高性能推論           |
-| `gemini-2.0-flash`       | Google (via Vertex AI)    | 安定版高速推論             |
+| モデル名                | プロバイダ                | 用途                     |
+| ----------------------- | ------------------------- | ------------------------ |
+| `claude-opus-4-6`       | Anthropic (via Vertex AI) | 高度な推論・コーディング |
+| `claude-sonnet-4-6`     | Anthropic (via Vertex AI) | バランス型タスク         |
+| `gemini-3.1-pro`        | Google (via Vertex AI)    | 最新フラッグシップ推論   |
+| `gemini-3.1-flash-lite` | Google (via Vertex AI)    | 高速・低コスト           |
+| `gemini-2.5-pro`        | Google (via Vertex AI)    | 安定版高性能推論         |
+| `gemini-2.5-flash`      | Google (via Vertex AI)    | 安定版高速推論           |
 
 ## クイックスタート
 

@@ -1,6 +1,7 @@
 # LLM Gateway デモスクリプト
 
 ## 前提
+
 - `deploy.sh` でデプロイ済み
 - `PROXY_URL` と `MASTER_KEY` を控えておく
 
@@ -14,6 +15,7 @@ export MASTER_KEY="<your-master-key>"
 ## デモ1: 管理者 — ユーザー・チーム管理
 
 ### チームを作成
+
 ```bash
 curl -X POST "${PROXY_URL}/team/new" \
   -H "Authorization: Bearer ${MASTER_KEY}" \
@@ -26,6 +28,7 @@ curl -X POST "${PROXY_URL}/team/new" \
 ```
 
 ### ユーザーを作成してAPIキーを発行
+
 ```bash
 # エンジニア向け（全モデルアクセス可）
 curl -X POST "${PROXY_URL}/key/generate" \
@@ -57,6 +60,7 @@ curl -X POST "${PROXY_URL}/key/generate" \
 ## デモ2: 開発者 — モデル利用
 
 ### Claude でリクエスト
+
 ```bash
 export USER_KEY="sk-user-key-here"
 
@@ -71,6 +75,7 @@ curl -X POST "${PROXY_URL}/v1/chat/completions" \
 ```
 
 ### Gemini 3.1 Pro でリクエスト
+
 ```bash
 curl -X POST "${PROXY_URL}/v1/chat/completions" \
   -H "Authorization: Bearer ${USER_KEY}" \
@@ -83,6 +88,7 @@ curl -X POST "${PROXY_URL}/v1/chat/completions" \
 ```
 
 ### 予算超過テスト（インターンのキーでOpusを試す）
+
 ```bash
 export INTERN_KEY="sk-intern-key-here"
 
@@ -102,6 +108,7 @@ curl -X POST "${PROXY_URL}/v1/chat/completions" \
 ## デモ3: Claude Code 接続
 
 ### 開発者の ~/.claude/settings.json
+
 ```json
 {
   "env": {
@@ -131,6 +138,7 @@ gemini "Hello from Gemini CLI via LLM Gateway!"
 ## デモ5: 使用量の確認
 
 ### LiteLLM API で確認
+
 ```bash
 # ユーザーの使用量
 curl "${PROXY_URL}/user/info?user_id=tanaka@example.com" \
@@ -165,14 +173,14 @@ ORDER BY date DESC, total_spend DESC;
 
 ## 対応モデル一覧
 
-| モデル名 | プロバイダ | 用途 |
-|---------|-----------|------|
-| `claude-opus-4-6` | Anthropic (Vertex AI) | 高度な推論・コーディング |
-| `claude-sonnet-4-6` | Anthropic (Vertex AI) | バランス型タスク |
-| `gemini-3.1-pro` | Google (Vertex AI) | 最新フラッグシップ推論 |
-| `gemini-3.1-flash-lite` | Google (Vertex AI) | 高速・低コスト |
-| `gemini-2.5-pro` | Google (Vertex AI) | 安定版高性能推論 |
-| `gemini-2.0-flash` | Google (Vertex AI) | 安定版高速推論 |
+| モデル名                | プロバイダ            | 用途                     |
+| ----------------------- | --------------------- | ------------------------ |
+| `claude-opus-4-6`       | Anthropic (Vertex AI) | 高度な推論・コーディング |
+| `claude-sonnet-4-6`     | Anthropic (Vertex AI) | バランス型タスク         |
+| `gemini-3.1-pro`        | Google (Vertex AI)    | 最新フラッグシップ推論   |
+| `gemini-3.1-flash-lite` | Google (Vertex AI)    | 高速・低コスト           |
+| `gemini-2.5-pro`        | Google (Vertex AI)    | 安定版高性能推論         |
+| `gemini-2.5-flash`      | Google (Vertex AI)    | 安定版高速推論           |
 
 ---
 

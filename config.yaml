@@ -34,9 +34,9 @@ model_list:
       vertex_project: "your-gcp-project-id"
       vertex_location: "us-central1"
 
-  - model_name: gemini-2.0-flash
+  - model_name: gemini-2.5-flash
     litellm_params:
-      model: vertex_ai/gemini-2.0-flash
+      model: vertex_ai/gemini-2.5-flash
       vertex_project: "your-gcp-project-id"
       vertex_location: "us-central1"
 

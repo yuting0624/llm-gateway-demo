@@ -49,7 +49,7 @@ for entry in data:
                 'date': date,
                 'model': model,
                 'spend': spend,
-                'sync_time': datetime.datetime.utcnow().isoformat()
+                'sync_time': datetime.datetime.now(datetime.timezone.utc).isoformat()
             })
     
     for user, spend in users.items():
@@ -58,7 +58,7 @@ for entry in data:
                 'date': date,
                 'user_id': user,
                 'user_spend': spend,
-                'sync_time': datetime.datetime.utcnow().isoformat()
+                'sync_time': datetime.datetime.now(datetime.timezone.utc).isoformat()
             })
 
 for row in rows:

@@ -83,10 +83,6 @@ if ! gcloud sql instances describe "${CLOUD_SQL_INSTANCE}" --project="${PROJECT_
     --project="${PROJECT_ID}" \
     --storage-auto-increase \
     --availability-type=zonal
-  echo "  Waiting for instance to be ready..."
-  gcloud sql instances patch "${CLOUD_SQL_INSTANCE}" \
-    --project="${PROJECT_ID}" \
-    --quiet
 else
   echo "  (already exists)"
 fi
@@ -142,8 +138,16 @@ echo "✅ Secrets stored"
 # --------------------------------------------------
 echo "🏗️ Step 6: Building and deploying to Cloud Run..."
 
-# Build container
-gcloud builds submit \
+# Substitute the placeholder vertex_project in config.yaml into a temp build
+# context so the working tree stays clean and end-users don't have to hand-edit
+# config.yaml before running this script.
+BUILD_DIR="$(mktemp -d)"
+trap 'rm -rf "${BUILD_DIR}"' EXIT
+cp Dockerfile "${BUILD_DIR}/Dockerfile"
+sed "s|your-gcp-project-id|${PROJECT_ID}|g" config.yaml > "${BUILD_DIR}/config.yaml"
+
+# Build container from the substituted context
+gcloud builds submit "${BUILD_DIR}" \
   --tag "gcr.io/${PROJECT_ID}/${SERVICE_NAME}" \
   --project="${PROJECT_ID}"
 
