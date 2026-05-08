@@ -1,12 +1,28 @@
 #!/bin/bash
-# Sync LiteLLM spend data to BigQuery
-# Usage: ./sync-spend-to-bq.sh
+# Sync LiteLLM spend data to BigQuery (batch load approach)
+#
+# NOTE: This script is an ALTERNATIVE to BigQuery Federation.
+# If you set up BigQuery Federation (EXTERNAL_QUERY to Cloud SQL),
+# you do NOT need this script — data is queried in real-time.
+# Use this script only if you want periodic BQ snapshots instead.
+#
+# Usage:
+#   PROJECT_ID=my-project \
+#   PROXY_URL=https://my-proxy.run.app \
+#   LITELLM_MASTER_KEY=xxx \
+#   ./sync-spend-to-bq.sh
 
-PROXY_URL="https://litellm-proxy-258509337164.asia-northeast1.run.app"
-MASTER_KEY="${LITELLM_MASTER_KEY:-84c24081344dd9ff627ead51880d243b}"
-BQ_TABLE="data-agent-bq:llm_gateway.spend_logs"
+PROJECT_ID="${PROJECT_ID:?Error: PROJECT_ID environment variable must be set}"
+PROXY_URL="${PROXY_URL:?Error: PROXY_URL environment variable must be set (e.g. https://litellm-proxy-xxxxx.run.app)}"
+MASTER_KEY="${LITELLM_MASTER_KEY:?Error: LITELLM_MASTER_KEY environment variable must be set}"
+BQ_DATASET="${BQ_DATASET:-llm_gateway}"
+BQ_TABLE="${PROJECT_ID}:${BQ_DATASET}.spend_logs"
 TODAY=$(date -u +%Y-%m-%d)
-TOMORROW=$(date -u -d "+1 day" +%Y-%m-%d)
+if [[ "$(uname)" == "Darwin" ]]; then
+  TOMORROW=$(date -u -v+1d +%Y-%m-%d)
+else
+  TOMORROW=$(date -u -d "+1 day" +%Y-%m-%d)
+fi
 TMPFILE=$(mktemp /tmp/spend-XXXXXX.json)
 
 echo "Syncing spend data for ${TODAY}..."

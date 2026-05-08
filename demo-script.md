@@ -5,8 +5,8 @@
 - `PROXY_URL` と `MASTER_KEY` を控えておく
 
 ```bash
-export PROXY_URL="https://litellm-proxy-258509337164.asia-northeast1.run.app"
-export MASTER_KEY="84c24081344dd9ff627ead51880d243b"
+export PROXY_URL="https://<your-proxy>.run.app"
+export MASTER_KEY="<your-master-key>"
 ```
 
 ---
@@ -105,7 +105,7 @@ curl -X POST "${PROXY_URL}/v1/chat/completions" \
 ```json
 {
   "env": {
-    "ANTHROPIC_BASE_URL": "https://litellm-proxy-258509337164.asia-northeast1.run.app",
+    "ANTHROPIC_BASE_URL": "https://<your-proxy>.run.app",
     "ANTHROPIC_AUTH_TOKEN": "<your-api-key>",
     "ANTHROPIC_MODEL": "claude-opus-4-6"
   }
@@ -145,29 +145,20 @@ curl "${PROXY_URL}/key/info?key=sk-user-key-here" \
   -H "Authorization: Bearer ${MASTER_KEY}"
 ```
 
-### BigQuery でクエリ（Looker Studioにも接続可能）
-```sql
--- モデル別コスト集計
-SELECT
-  model,
-  COUNT(*) AS request_count,
-  SUM(spend) AS total_cost,
-  SUM(total_tokens) AS total_tokens,
-  AVG(TIMESTAMP_DIFF(endTime, startTime, MILLISECOND)) AS avg_latency_ms
-FROM `data-agent-bq.llm_gateway.spend_logs`
-WHERE startTime >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 7 DAY)
-GROUP BY model
-ORDER BY total_cost DESC;
+### BigQuery Federation でクエリ（Looker Studioにも接続可能）
 
--- ユーザー別コスト（日別推移）
-SELECT
-  user,
-  DATE(startTime) AS date,
-  SUM(spend) AS daily_cost,
-  COUNT(*) AS requests
-FROM `data-agent-bq.llm_gateway.spend_logs`
-GROUP BY user, date
-ORDER BY date DESC, daily_cost DESC;
+BigQuery Federation を使い、Cloud SQL のデータを直接クエリします（セットアップは article.md 参照）。
+
+```sql
+-- モデル別日次コスト（Federation ビュー経由）
+SELECT date, model, total_spend, request_count, total_tokens
+FROM `<your-project-id>.llm_gateway.daily_model_spend`
+ORDER BY date DESC, total_spend DESC;
+
+-- ユーザー別日次コスト（Federation ビュー経由）
+SELECT date, user_id, model, total_spend, api_requests
+FROM `<your-project-id>.llm_gateway.daily_user_spend`
+ORDER BY date DESC, total_spend DESC;
 ```
 
 ---

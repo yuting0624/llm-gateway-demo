@@ -3,49 +3,57 @@ model_list:
   - model_name: claude-opus-4-6
     litellm_params:
       model: vertex_ai/claude-opus-4-6
-      vertex_project: "data-agent-bq"
+      vertex_project: "your-gcp-project-id"
       vertex_location: "global"
 
   - model_name: claude-sonnet-4-6
     litellm_params:
       model: vertex_ai/claude-sonnet-4-6
-      vertex_project: "data-agent-bq"
+      vertex_project: "your-gcp-project-id"
       vertex_location: "global"
 
   # Gemini 3.1 Models (global endpoint)
   - model_name: gemini-3.1-pro
     litellm_params:
       model: vertex_ai/gemini-3.1-pro-preview
-      vertex_project: "data-agent-bq"
+      vertex_project: "your-gcp-project-id"
       vertex_location: "global"
-      api_base: "https://aiplatform.googleapis.com/v1/projects/data-agent-bq/locations/global/publishers/google/models/gemini-3.1-pro-preview"
+      api_base: "https://aiplatform.googleapis.com/v1/projects/your-gcp-project-id/locations/global/publishers/google/models/gemini-3.1-pro-preview"
 
   - model_name: gemini-3.1-flash-lite
     litellm_params:
       model: vertex_ai/gemini-3.1-flash-lite-preview
-      vertex_project: "data-agent-bq"
+      vertex_project: "your-gcp-project-id"
       vertex_location: "global"
-      api_base: "https://aiplatform.googleapis.com/v1/projects/data-agent-bq/locations/global/publishers/google/models/gemini-3.1-flash-lite-preview"
+      api_base: "https://aiplatform.googleapis.com/v1/projects/your-gcp-project-id/locations/global/publishers/google/models/gemini-3.1-flash-lite-preview"
 
   # Gemini 2.x Models (us-central1 - fallback)
   - model_name: gemini-2.5-pro
     litellm_params:
       model: vertex_ai/gemini-2.5-pro
-      vertex_project: "data-agent-bq"
+      vertex_project: "your-gcp-project-id"
       vertex_location: "us-central1"
 
   - model_name: gemini-2.0-flash
     litellm_params:
       model: vertex_ai/gemini-2.0-flash
-      vertex_project: "data-agent-bq"
+      vertex_project: "your-gcp-project-id"
       vertex_location: "us-central1"
 
 litellm_settings:
   drop_params: true
+  num_retries: 2
+  request_timeout: 600
+  # Stream first-token timeout. Aborts hanging providers (e.g. Vertex slow start).
+  stream_timeout: 60
+  # Model fallback chain — used when the primary model returns 429 / 5xx.
+  # Lets clients keep working when a region's quota is exhausted.
+  fallbacks:
+    - claude-opus-4-6: ["claude-sonnet-4-6", "gemini-3.1-pro"]
+    - claude-sonnet-4-6: ["gemini-3.1-pro"]
 
-# Gemini CLI で Claude を使う場合のエイリアス設定（応用例）
-# gemini-cli が送る "gemini-2.5-pro" を Claude にルーティング
-# 有効化する場合は下記のコメントを外してください
+# Optional: route Gemini CLI requests to Claude via the same Vertex AI backend.
+# Uncomment to enable.
 # router_settings:
 #   model_group_alias:
 #     "gemini-2.5-pro": "claude-sonnet-4-6"

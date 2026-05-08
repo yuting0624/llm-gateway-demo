@@ -3,19 +3,24 @@ set -euo pipefail
 
 # ============================================================
 # LLM Gateway Demo - Cloud Run Deployment Script
-# Project: data-agent-bq
+#
+# Required env vars (override defaults via shell or .env):
+#   PROJECT_ID       — GCP project to deploy into (REQUIRED)
+#   REGION           — Cloud Run / Cloud SQL region (default: asia-northeast1)
+#   SERVICE_NAME     — Cloud Run service name (default: litellm-proxy)
+#
+# Example:
+#   PROJECT_ID=my-project ./deploy.sh
 # ============================================================
 
-PROJECT_ID="data-agent-bq"
-REGION="asia-northeast1"
-SERVICE_NAME="litellm-proxy"
+PROJECT_ID="${PROJECT_ID:?Error: PROJECT_ID environment variable must be set (e.g. PROJECT_ID=my-gcp-project ./deploy.sh)}"
+REGION="${REGION:-asia-northeast1}"
+SERVICE_NAME="${SERVICE_NAME:-litellm-proxy}"
 SA_NAME="litellm-proxy-sa"
 SA_EMAIL="${SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com"
 CLOUD_SQL_INSTANCE="litellm-db"
 CLOUD_SQL_CONNECTION="${PROJECT_ID}:${REGION}:${CLOUD_SQL_INSTANCE}"
-PUBSUB_TOPIC="litellm-spend-logs"
 BQ_DATASET="llm_gateway"
-BQ_TABLE="spend_logs"
 MASTER_KEY="${LITELLM_MASTER_KEY:-$(openssl rand -hex 16)}"
 DB_PASSWORD="$(openssl rand -hex 16)"
 DB_NAME="litellm"
@@ -35,8 +40,8 @@ gcloud services enable \
   aiplatform.googleapis.com \
   run.googleapis.com \
   sqladmin.googleapis.com \
-  pubsub.googleapis.com \
   bigquery.googleapis.com \
+  bigqueryconnection.googleapis.com \
   secretmanager.googleapis.com \
   cloudbuild.googleapis.com \
   artifactregistry.googleapis.com \
@@ -54,9 +59,8 @@ gcloud iam service-accounts create "${SA_NAME}" \
 ROLES=(
   "roles/aiplatform.user"
   "roles/cloudsql.client"
-  "roles/pubsub.publisher"
-  "roles/bigquery.dataEditor"
   "roles/secretmanager.secretAccessor"
+  "roles/logging.logWriter"
 )
 for ROLE in "${ROLES[@]}"; do
   gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
@@ -101,45 +105,23 @@ gcloud sql users set-password "${DB_USER}" \
   --password="${DB_PASSWORD}" \
   --project="${PROJECT_ID}"
 
-DATABASE_URL="postgresql://${DB_USER}:${DB_PASSWORD}@localhost:5432/${DB_NAME}"
+DATABASE_URL="postgresql://${DB_USER}:${DB_PASSWORD}@localhost/${DB_NAME}?host=/cloudsql/${CLOUD_SQL_CONNECTION}"
 echo "✅ Cloud SQL ready"
 
 # --------------------------------------------------
-# Step 4: Create Pub/Sub Topic
+# Step 4: Create BigQuery Dataset (for Federation views)
 # --------------------------------------------------
-echo "📨 Step 4: Creating Pub/Sub topic..."
-gcloud pubsub topics create "${PUBSUB_TOPIC}" \
-  --project="${PROJECT_ID}" 2>/dev/null || echo "  (already exists)"
-echo "✅ Pub/Sub topic ready"
-
-# --------------------------------------------------
-# Step 5: Create BigQuery Dataset & Pub/Sub Subscription
-# --------------------------------------------------
-echo "📊 Step 5: Setting up BigQuery..."
+echo "📊 Step 4: Setting up BigQuery dataset..."
 bq --project_id="${PROJECT_ID}" mk \
   --dataset \
   --location="${REGION}" \
   "${BQ_DATASET}" 2>/dev/null || echo "  (dataset already exists)"
-
-# Create BigQuery table with LiteLLM spend log schema
-bq --project_id="${PROJECT_ID}" mk \
-  --table \
-  "${BQ_DATASET}.${BQ_TABLE}" \
-  'request_id:STRING,call_type:STRING,api_key:STRING,spend:FLOAT,total_tokens:INTEGER,prompt_tokens:INTEGER,completion_tokens:INTEGER,startTime:TIMESTAMP,endTime:TIMESTAMP,completionStartTime:TIMESTAMP,model:STRING,model_id:STRING,model_group:STRING,api_base:STRING,user:STRING,metadata:STRING,cache_hit:STRING,cache_key:STRING,request_tags:STRING,team_id:STRING,end_user:STRING,requester_ip_address:STRING,messages:STRING,response:STRING,status:STRING,error_str:STRING' \
-  2>/dev/null || echo "  (table already exists)"
-
-# Create Pub/Sub → BigQuery subscription
-gcloud pubsub subscriptions create "${PUBSUB_TOPIC}-bq-sub" \
-  --topic="${PUBSUB_TOPIC}" \
-  --bigquery-table="${PROJECT_ID}:${BQ_DATASET}.${BQ_TABLE}" \
-  --write-metadata \
-  --project="${PROJECT_ID}" 2>/dev/null || echo "  (subscription already exists)"
-echo "✅ BigQuery pipeline ready"
+echo "✅ BigQuery dataset ready (use BigQuery Federation to query Cloud SQL directly)"
 
 # --------------------------------------------------
-# Step 6: Store Secrets
+# Step 5: Store Secrets
 # --------------------------------------------------
-echo "🔐 Step 6: Storing secrets..."
+echo "🔐 Step 5: Storing secrets..."
 echo -n "${MASTER_KEY}" | gcloud secrets create litellm-master-key \
   --data-file=- \
   --project="${PROJECT_ID}" 2>/dev/null || \
@@ -156,9 +138,9 @@ echo -n "${DATABASE_URL}" | gcloud secrets create litellm-database-url \
 echo "✅ Secrets stored"
 
 # --------------------------------------------------
-# Step 7: Build & Deploy to Cloud Run
+# Step 6: Build & Deploy to Cloud Run
 # --------------------------------------------------
-echo "🏗️ Step 7: Building and deploying to Cloud Run..."
+echo "🏗️ Step 6: Building and deploying to Cloud Run..."
 
 # Build container
 gcloud builds submit \
@@ -166,6 +148,9 @@ gcloud builds submit \
   --project="${PROJECT_ID}"
 
 # Deploy to Cloud Run
+# NOTE: --allow-unauthenticated makes the proxy publicly accessible.
+# LiteLLM enforces API key authentication, but for stricter access control
+# consider using --no-allow-unauthenticated with IAM-based auth or IAP.
 gcloud run deploy "${SERVICE_NAME}" \
   --image="gcr.io/${PROJECT_ID}/${SERVICE_NAME}" \
   --platform=managed \
@@ -176,13 +161,10 @@ gcloud run deploy "${SERVICE_NAME}" \
   --memory=1Gi \
   --cpu=1 \
   --min-instances=0 \
-  --max-instances=3 \
+  --max-instances=5 \
   --allow-unauthenticated \
   --add-cloudsql-instances="${CLOUD_SQL_CONNECTION}" \
-  --set-env-vars="LITELLM_MASTER_KEY=sm://${PROJECT_ID}/litellm-master-key" \
-  --set-env-vars="DATABASE_URL=sm://${PROJECT_ID}/litellm-database-url" \
-  --set-env-vars="GCS_PUBSUB_TOPIC_ID=${PUBSUB_TOPIC}" \
-  --set-env-vars="GCS_PUBSUB_PROJECT_ID=${PROJECT_ID}" \
+  --set-secrets="LITELLM_MASTER_KEY=litellm-master-key:latest,DATABASE_URL=litellm-database-url:latest" \
   --set-env-vars="GOOGLE_CLOUD_PROJECT=${PROJECT_ID}"
 
 # Get the URL
@@ -200,13 +182,13 @@ echo "📍 LiteLLM Proxy URL: ${SERVICE_URL}"
 echo "🔑 Master Key:        ${MASTER_KEY}"
 echo "🖥️ Dashboard:         ${SERVICE_URL}/ui"
 echo ""
-echo "📊 BigQuery Table:    ${PROJECT_ID}:${BQ_DATASET}.${BQ_TABLE}"
-echo "📨 Pub/Sub Topic:     ${PUBSUB_TOPIC}"
+echo "📊 BigQuery Dataset:  ${PROJECT_ID}:${BQ_DATASET}"
 echo "🗄️ Cloud SQL:         ${CLOUD_SQL_INSTANCE}"
 echo ""
 echo "Next steps:"
 echo "  1. Open ${SERVICE_URL}/ui and log in with master key"
 echo "  2. Create users and API keys (see demo-script.md)"
 echo "  3. Configure Claude Code / Gemini CLI to use this proxy"
-echo "  4. Connect BigQuery to Looker Studio for dashboards"
+echo "  4. Set up BigQuery Federation (EXTERNAL_QUERY) to Cloud SQL"
+echo "  5. Connect BigQuery views to Looker Studio for dashboards"
 echo "============================================================"

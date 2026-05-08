@@ -7,7 +7,7 @@
 *.pem
 credentials.json
 service-account.json
-
+.claude/
 # IDE
 .vscode/
 .idea/
